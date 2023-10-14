@@ -11,6 +11,7 @@ from psynet.trial import compile_nodes_from_directory
 from psynet.trial.static import StaticNode, StaticTrial, StaticTrialMaker
 from psynet.utils import get_logger
 from psynet.prescreen import AntiphaseHeadphoneTest
+from .questionnaire import debrief, questionnaire, STOMPR, TIPI
 
 
 logger = get_logger()
@@ -33,7 +34,7 @@ def instructions():
             """
             <h3>Instructions</h3>
             <hr>
-            In this experiment, you will hear melodies and be asked to sing them back as accurately as possible.
+            In this experiment, you will hear melodies and be asked to rate how much you like them.
             <br><br>
             Press <b><b>next</b></b> when you are ready to start.
             <hr>
@@ -50,9 +51,6 @@ def requirements():
             <h3>Requirements</h3>
             <hr>
             <b><b>For this experiment we need you to use headphones or earplugs and a working microphone.</b></b>
-            <br><br>
-            However, we ask that you do not wear wireless headphones/earphones (e.g. EarPods),
-            they often introduce recording issues.
             <br><br>
             If you cannot satisfy these requirements or your microphone or your headphones/earplugs do not work, please return the survey now.
             <hr>
@@ -119,7 +117,7 @@ class Exp(psynet.experiment.Experiment):
     timeline = Timeline(
         NoConsent(),
         # MainConsent(),  # use for main experiment
-        InfoPage("Welcome page", time_estimate=5),
+        InfoPage("Welcome! In this experiment you will be played a series of melodies. Your task will be to rate the 'pleasantness' of these melodies on a numeric scale.", time_estimate=5),
         requirements(),
         # VolumeCalibration(),
         # AntiphaseHeadphoneTest(),
@@ -147,6 +145,12 @@ class Exp(psynet.experiment.Experiment):
             expected_trials_per_participant=TRIALS_PER_PARTICIPANT,
             max_trials_per_participant=TRIALS_PER_PARTICIPANT,
         ),
-        # TODO: add questionnaires here
+        questionnaire(),
+        InfoPage("Next, we would like to ask you some questions about your music preferences (0.15 extra bonus)",
+                 time_estimate=3),
+        STOMPR(),
+        InfoPage("Finally, we would like to ask you some questions about your personality (0.15 extra bonus)",
+                 time_estimate=3),
+        TIPI(),
         SuccessfulEndPage(),
     )
