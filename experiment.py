@@ -146,11 +146,5 @@ class Exp(psynet.experiment.Experiment):
             max_trials_per_participant=TRIALS_PER_PARTICIPANT,
         ),
         questionnaire(),
-        InfoPage("Next, we would like to ask you some questions about your music preferences.",
-                 time_estimate=3),
-        STOMPR(),
-        InfoPage("Finally, we would like to ask you some questions about your personality.",
-                 time_estimate=3),
-        TIPI(),
         SuccessfulEndPage(),
     )
