@@ -1,0 +1,72 @@
+{
+    "device_compatibility": [
+        "desktop"
+    ],
+    "eligibility_requirements": [
+        {
+            "type": "select",
+            "attributes": [
+                {
+                    "label": "English",
+                    "name": "English",
+                    "value": true,
+                    "index": 19
+                }
+            ],
+            "query": {
+                "id": "6228741119c5d3b399f98aaf",
+                "title": "Primary Language"
+            },
+            "_cls": "web.eligibility.models.MultiSelectAnswerEligibilityRequirement"
+        },
+        {
+            "type": "select",
+            "attributes": [
+                {
+                    "label": "English",
+                    "name": "English",
+                    "value": true,
+                    "index": 18
+                }
+            ],
+            "query": {
+                "id": "54ac6ea9fdf99b2204feb899",
+                "title": "First Language"
+            },
+            "_cls": "web.eligibility.models.SelectAnswerEligibilityRequirement"
+        },
+        {
+            "type": "select",
+            "attributes": [
+                {
+                    "label": "English",
+                    "name": "English",
+                    "value": true,
+                    "index": 19
+                }
+            ],
+            "query": {
+                "id": "622874dc19c5d3b399f98ab0",
+                "title": "Earliest Language in Life"
+            },
+            "_cls": "web.eligibility.models.MultiSelectAnswerEligibilityRequirement"
+        },
+        {
+            "type": "select",
+            "attributes": [
+                {
+                    "label": "English",
+                    "name": "English",
+                    "value": true,
+                    "index": 19
+                }
+            ],
+            "query": {
+                "id": "58c6b44ea4dd0a4799361afc",
+                "title": "Fluent languages"
+            },
+            "_cls": "web.eligibility.models.MultiSelectAnswerEligibilityRequirement"
+        }
+    ],
+    "peripheral_requirements": ["audio"]
+}

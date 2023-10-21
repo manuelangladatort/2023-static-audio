@@ -1,8 +1,8 @@
-import random
+import json
 from markupsafe import Markup
 
 import psynet.experiment
-from psynet.asset import DebugStorage
+from psynet.asset import DebugStorage, LocalStorage
 from psynet.consent import NoConsent, MainConsent
 from psynet.modular_page import AudioPrompt, ModularPage, PushButtonControl
 from psynet.page import InfoPage, SuccessfulEndPage, VolumeCalibration
@@ -19,28 +19,69 @@ logger = get_logger()
 ########################################################################################################################
 # Global params
 ########################################################################################################################
+INITIAL_RECRUITMENT_SIZE = 11
 TARGET_NUM_PARTICIPANTS = 10
 
 TRIALS_PER_PARTICIPANT = 5
 TRIALS_PER_PARTICIPANT_PRACTICE = 2
 N_REPEAT_TRIALS = 0
 
+
+########################################################################################################################
+# stimuli
+########################################################################################################################
+# upload files from dir to s3
+# aws s3 sync local-folder/. s3://bucket/folder/sub-folder
+# this will sync everything in your local folder (local-folder) to bucket/folder/sub-folder
+
+# create a json file with the urls of all audios
+# import json
+# import os
+# audios = []
+# directory_path = "local-folder/sub-folder"
+# s3_path = "https://manu-projects.s3.amazonaws.com/melody-preferences/NHS_all/14sec/"
+#
+# # List all files in the directory
+# for filename in os.listdir(directory_path):
+#     if filename.lower().endswith(".mp3"):
+#         full_path = s3_path + filename
+#         audio_dict = {
+#             "audio_name": filename,
+#             "audio_url": full_path
+#         }
+#         audios.append(audio_dict)
+#
+# with open("audio_data.json", 'w') as f:
+#     json.dump(audios, f)
+# f.close()
+
+
+with open("audio_data.json") as f:
+    validation_data = json.load(f)
+
+nodes = []
+for item in validation_data:
+    nodes.append(
+        StaticNode(
+            definition=item,
+        )
+    )
+
+
 ########################################################################################################################
 # Experiment parts
 ########################################################################################################################
-def instructions():
+def welcome():
     return InfoPage(
         Markup(
             """
-            <h3>Instructions</h3>
+            <h3>Welcome!</h3>
             <hr>
-            In this experiment, you will hear melodies and be asked to rate how much you like them.
-            <br><br>
-            Press <b><b>next</b></b> when you are ready to start.
+            In this experiment you will be played songs and asked to rate how much you like them.
             <hr>
             """
         ),
-        time_estimate=0
+        time_estimate=3
     )
 
 
@@ -56,7 +97,44 @@ def requirements():
             <hr>
             """
         ),
-        time_estimate=0
+        time_estimate=3
+    )
+
+
+def instructions_practice():
+    return InfoPage(
+        Markup(
+            f"""
+            <h3>Practice</h3>
+            <hr>
+            You will start by taking {TRIALS_PER_PARTICIPANT_PRACTICE} practice trials.
+            <br><br>
+            Please listen to each song carefully and rate how much you like it,
+            using a 'pleasantness' scale from 1 (very unpleasant) to 7 (very pleasant).
+            <hr>
+            """
+        ),
+        time_estimate=3
+    )
+
+
+def instructions_experiment():
+    return InfoPage(
+        Markup(
+            f"""
+            <h3>Main experiment</h3>
+            <hr>
+            You will now start with the main part of the experiment. 
+            You will rate a total of {(TRIALS_PER_PARTICIPANT + N_REPEAT_TRIALS)} songs.
+            <br><br>
+            <b><b>Please listen to each song carefully and rate how much you like it</b></b>,
+            using a 'pleasantness' scale from 1 (very unpleasant) to 7 (very pleasant).
+            <br><br>
+            Press <b><b>next</b></b> to start.
+            <hr>
+            """
+        ),
+        time_estimate=3
     )
 
 
@@ -65,28 +143,31 @@ class RatingTrial(StaticTrial):
 
     def show_trial(self, experiment, participant):
 
-        # Debugger
+        # debugger
         # import pydevd_pycharm
         # pydevd_pycharm.settrace('localhost', port=52218, stdoutToServer=True, stderrToServer=True)
 
-        # count number trials per trial
+        current_trial = self.position + 1
+
         if self.trial_maker_id == "audio_practice":
+            audio_url = self.assets["prompt"]
             n_trials = TRIALS_PER_PARTICIPANT_PRACTICE
+            show_current_trial = f'<i>Practice trial number {current_trial} out of {n_trials} trials.</i>'
         else:
             n_trials = TRIALS_PER_PARTICIPANT + N_REPEAT_TRIALS
+            audio_url = self.definition['audio_url']
+            show_current_trial = f'<i>Trial number {current_trial} out of {n_trials} trials.</i>'
 
-        current_trial = self.position + 1
-        show_current_trial = f'<i>Trial number {current_trial} out of {n_trials} trials.</i>'
+        logger.info("audio url: {}".format(audio_url))
 
         return ModularPage(
             "question_page",
-            AudioPrompt(self.assets["prompt"],
-                        Markup(f"""
-                        <h5>How much do you like the song?</h5>
-                        <i>{show_current_trial}</i>
-                        """
-                               )
-                        ),
+            AudioPrompt(
+                # audio
+                audio_url,
+                # text
+                Markup(f"""<h5>How much do you like the song?</h5> <i>{show_current_trial}</i>""")
+            ),
             PushButtonControl(
                 choices=[1, 2, 3, 4, 5, 6, 7],
                 labels=[
@@ -110,36 +191,62 @@ class RatingTrial(StaticTrial):
 ########################################################################################################################
 # Timeline
 ########################################################################################################################
+def get_prolific_settings():
+    with open("qualification_prolific.json", "r") as f:
+        qualification = json.dumps(json.load(f))
+    return {
+        "recruiter": "prolific",
+        "prolific_reward_cents": 30,
+        "prolific_estimated_completion_minutes": 2,
+        "prolific_maximum_allowed_minutes": 60,
+        "prolific_recruitment_config": qualification,
+        "base_payment": 0.0,
+        "auto_recruit": False,
+        "currency": "£",
+        "wage_per_hour": 9
+    }
+
+
 class Exp(psynet.experiment.Experiment):
-    label = "Audio stimulus set from directory demo"
-    asset_storage = DebugStorage()
+    label = "Static song preferences"
+    asset_storage = LocalStorage()
+
+    config = {
+        **get_prolific_settings(),
+        "initial_recruitment_size": INITIAL_RECRUITMENT_SIZE,
+        "title": "Listen to songs and rate them (5 min, bonus: £0.39).",
+        "description": "Working headphones are required!"
+                       "You will hear songs and be asked to rate them."
+                       "The experiment will take approximately 5 min and you will get £0.30.",
+        "contact_email_on_error": "manuel.anglada-tort@ae.mpg.de",
+        "organization_name": "Max Planck Institute for Empirical Aesthetics",
+        "dashboard_password": "capcapcap2021!",
+        "dashboard_user": "cap",
+    }
 
     timeline = Timeline(
-        NoConsent(),
-        # MainConsent(),  # use for main experiment
-        InfoPage("Welcome! In this experiment you will be played a series of melodies. Your task will be to rate the 'pleasantness' of these melodies on a numeric scale.", time_estimate=5),
+        MainConsent(),
+        welcome(),
         requirements(),
         # VolumeCalibration(),
         # AntiphaseHeadphoneTest(),
-        instructions(),
+        instructions_practice(),
         StaticTrialMaker(
             id_="audio_practice",
             trial_class=RatingTrial,
             nodes=compile_nodes_from_directory(
-                input_dir="input/practice", media_ext=".mp3", node_class=StaticNode
+                input_dir="static/practice", media_ext=".mp3", node_class=StaticNode
             ),
             target_n_participants=0,
             recruit_mode="n_participants",
             expected_trials_per_participant=TRIALS_PER_PARTICIPANT_PRACTICE,
             max_trials_per_participant=TRIALS_PER_PARTICIPANT_PRACTICE,
         ),
-        InfoPage("We continue with the experiment trials.", time_estimate=5),
+        instructions_experiment(),
         StaticTrialMaker(
             id_="audio_experiment",
             trial_class=RatingTrial,
-            nodes=compile_nodes_from_directory(
-                input_dir="input/experiment", media_ext=".mp3", node_class=StaticNode
-            ),
+            nodes=nodes,
             target_n_participants=TARGET_NUM_PARTICIPANTS,
             recruit_mode="n_participants",
             expected_trials_per_participant=TRIALS_PER_PARTICIPANT,
