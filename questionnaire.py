@@ -27,6 +27,12 @@ def questionnaire():
         Age(),
         Gender(),
         GMSI(subscales=["Musical Training"]),
+        InfoPage("Next, we would like to ask you some questions about your music preferences.",
+                 time_estimate=3),
+        STOMPR(),
+        InfoPage("Finally, we would like to ask you some questions about your personality.",
+                 time_estimate=3),
+        TIPI(),
         feedback(),
     )
 
