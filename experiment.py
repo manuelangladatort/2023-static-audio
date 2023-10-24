@@ -22,41 +22,10 @@ logger = get_logger()
 INITIAL_RECRUITMENT_SIZE = 11
 TARGET_NUM_PARTICIPANTS = 10
 
-TRIALS_PER_PARTICIPANT = 5
-TRIALS_PER_PARTICIPANT_PRACTICE = 2
-N_REPEAT_TRIALS = 0
+AUDIO_SET = "audio_data_original.json"  # three options: original, synth, and synth_f0
 
-
-########################################################################################################################
-# stimuli
-########################################################################################################################
-# upload files from dir to s3
-# aws s3 sync local-folder/. s3://bucket/folder/sub-folder
-# this will sync everything in your local folder (local-folder) to bucket/folder/sub-folder
-
-# create a json file with the urls of all audios
-# import json
-# import os
-# audios = []
-# directory_path = "local-folder/sub-folder"
-# s3_path = "https://manu-projects.s3.amazonaws.com/melody-preferences/NHS_all/14sec/"
-#
-# # List all files in the directory
-# for filename in os.listdir(directory_path):
-#     if filename.lower().endswith(".mp3"):
-#         full_path = s3_path + filename
-#         audio_dict = {
-#             "audio_name": filename,
-#             "audio_url": full_path
-#         }
-#         audios.append(audio_dict)
-#
-# with open("audio_data.json", 'w') as f:
-#     json.dump(audios, f)
-# f.close()
-
-
-with open("audio_data.json") as f:
+# load json file with audio urls (from s3)
+with open(AUDIO_SET) as f:
     validation_data = json.load(f)
 
 nodes = []
@@ -66,6 +35,41 @@ for item in validation_data:
             definition=item,
         )
     )
+
+TRIALS_PER_PARTICIPANT = len(validation_data)
+TRIALS_PER_PARTICIPANT_PRACTICE = 2
+N_REPEAT_TRIALS = 0
+
+
+########################################################################################################################
+# Create audio stimuli
+########################################################################################################################
+# upload files from dir to s3
+# aws s3 sync local-folder/. s3://bucket/folder/sub-folder
+# this will sync everything in your local folder (local-folder) to bucket/folder/sub-folder
+# for example
+# aws s3 sync /Users/manu/Documents/cap/PROJECTS/MELODY/NHS/NHS_stimuli_set  s3://manu-projects/melody-preferences/NHS
+
+
+# create a json file with the urls of all audios
+# import os
+# directory_path = "/Users/manu/Documents/cap/PROJECTS/MELODY/NHS/NHS_stimuli_set/synth_f0"  # to my local folder
+# s3_path = "https://manu-projects.s3.amazonaws.com/melody-preferences/NHS/synth_f0/"  # to my s3 project folder
+#
+# # List all files in the directory
+# audios = []
+# for filename in os.listdir(directory_path):
+#     if filename.lower().endswith(".wav"):
+#         full_path = s3_path + filename
+#         audio_dict = {
+#             "audio_name": filename,
+#             "audio_url": full_path
+#         }
+#         audios.append(audio_dict)
+#
+# with open("audio_data_synth_f0.json", 'w') as f:
+#     json.dump(audios, f)
+# f.close()
 
 
 ########################################################################################################################
