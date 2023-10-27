@@ -19,6 +19,8 @@ logger = get_logger()
 ########################################################################################################################
 # Global params
 ########################################################################################################################
+RECRUITER = "hotair"  # "hotair" for sharing with others, "prolific" for deploying
+
 INITIAL_RECRUITMENT_SIZE = 11
 TARGET_NUM_PARTICIPANTS = 10
 
@@ -37,6 +39,7 @@ for item in validation_data:
     )
 
 TRIALS_PER_PARTICIPANT = len(validation_data)
+TRIALS_PER_PARTICIPANT = 5
 TRIALS_PER_PARTICIPANT_PRACTICE = 2
 N_REPEAT_TRIALS = 0
 
@@ -199,7 +202,7 @@ def get_prolific_settings():
     with open("qualification_prolific.json", "r") as f:
         qualification = json.dumps(json.load(f))
     return {
-        "recruiter": "prolific",
+        "recruiter": RECRUITER,
         "prolific_reward_cents": 30,
         "prolific_estimated_completion_minutes": 2,
         "prolific_maximum_allowed_minutes": 60,
@@ -232,8 +235,8 @@ class Exp(psynet.experiment.Experiment):
         MainConsent(),
         welcome(),
         requirements(),
-        # VolumeCalibration(),
-        # AntiphaseHeadphoneTest(),
+        VolumeCalibration(),
+        AntiphaseHeadphoneTest(),
         instructions_practice(),
         StaticTrialMaker(
             id_="audio_practice",
