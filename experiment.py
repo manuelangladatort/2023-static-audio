@@ -236,7 +236,7 @@ class Exp(psynet.experiment.Experiment):
         welcome(),
         requirements(),
         VolumeCalibration(),
-        AntiphaseHeadphoneTest(),
+        # AntiphaseHeadphoneTest(),
         instructions_practice(),
         StaticTrialMaker(
             id_="audio_practice",
