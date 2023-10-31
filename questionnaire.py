@@ -33,6 +33,7 @@ def questionnaire():
         InfoPage("Finally, we would like to ask you some questions about your personality.",
                  time_estimate=3),
         TIPI(),
+        DFS(),
         feedback(),
     )
 
@@ -211,3 +212,78 @@ def debrief():
         )
 
     return InfoPage(html, time_estimate=10)
+
+DFS_rating_values = [
+    {"value": "1", "text": "1 (Never)"},
+    {"value": "2", "text": "2"},
+    {"value": "3", "text": "3"},
+    {"value": "4", "text": "4"},
+    {"value": "5", "text": "5 (Always)"}
+]
+
+DFS_items = [
+    {"value": "Challenge_skill1", "text": "I am challenged, but I believe my skills will allow me to meet the challenge"},
+    {"value": "Action_awareness1", "text": "I do things correctly without thinking about trying to do so"},
+    {"value": "Clear_goals1", "text": "I know clearly what I want to do"},
+    {"value": "Unambiguous_feedback1", "text": "It is really clear to me how I am going"},
+    {"value": "Task_concentration1", "text": "My attention is focused entirely on what I am doing"},
+    {"value": "Sense_of_control1", "text": "I have a sense of control over what I am doing"},
+    {"value": "Loss_of_self1", "text": "I am not concerned with what others may be thinking of me"},
+    {"value": "Transformation_of_time1", "text": "Time seems to alter (either slows down or speeds up)"},
+    {"value": "Autotelic_experience1", "text": "I really enjoy the experience of what I am doing"},
+    {"value": "Challenge_skill2", "text": "My abilities match the challenge of what I am doing"},
+    {"value": "Action_awareness2", "text": "Things just seem to happen automatically"},
+    {"value": "Clear_goals2", "text": "I have a strong sense of what I want to do"},
+    {"value": "Unambiguous_feedback2", "text": "I am aware of how well I am doing"},
+    {"value": "Task_concentration2", "text": "It is no effort to keep my mind on what is happening"},
+    {"value": "Sense_of_control2", "text": "I feel like I can control what I am doing"},
+    {"value": "Transformation_of_time2", "text": "The way time passes seems to be different from normal"},
+    {"value": "Autotelic_experience2", "text": "I love the feeling of what I am doing and want to capture this feeling again"},
+    {"value": "Challenge_skill3", "text": "I feel I am competent enough to meet the demands of the situation"},
+    {"value": "Action_awareness3", "text": "I do things automatically, without thinking too much"},
+    {"value": "Clear_goals3", "text": "I know what I want to achieve"},
+    {"value": "Unambiguous_feedback3", "text": "I have a good idea about how well I am doing while I am involved in the task/activity"},
+    {"value": "Task_concentration3", "text": "I have total connection"},
+    {"value": "Sense_of_control3", "text": "I have feeling of total control over what I am doing"},
+    {"value": "Transformation_of_time3", "text": "It feels like time goes by quickly"},
+    {"value": "Autotelic_experience3", "text": "The experience leaves me feeling great"},
+    {"value": "Challenge_skill4", "text": "The challenge and my skills are at an equally high level"},
+    {"value": "Action_awareness4", "text": "I do things spontaneously and automatically without having to think"},
+    {"value": "Clear_goals4", "text": "My goals are clearly defined"},
+    {"value": "Unambiguous_feedback4", "text": "I can tell by the way things are progressing how well I am doing"},
+    {"value": "Task_concentration4", "text": "I an completely focused on the task at hand"},
+    {"value": "Sense_of_control4", "text": "I feel in total control of my actions"},
+    {"value": "Transformation_of_time4", "text": "I lose my normal awareness of time"},
+    {"value": "Autotelic_experience4", "text": "The experience is extremely rewarding"},
+
+]
+
+
+class DFS(ModularPage):
+    def __init__(self):
+        super().__init__(
+            "DFS",
+            "Rate your agreement with each statement on a scale from 1 (never) to 5 (always).",
+            SurveyJSControl(
+                {
+                    "logoPosition": "right",
+                    "pages": [
+                        {
+                            "name": "page1",
+                            "elements": [
+                                {
+                                    "type": "matrix",
+                                    "name": "DFS_choices",
+                                    "title": "Think about how you felt during the task today.",
+                                    "isRequired": True,
+                                    "columns": DFS_rating_values,
+                                    "rows": DFS_items,
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ),
+            time_estimate=55,
+            bot_response=lambda: {"rating": "5",},
+        )
