@@ -19,10 +19,10 @@ logger = get_logger()
 ########################################################################################################################
 # Global params
 ########################################################################################################################
-RECRUITER = "hotair"  # "hotair" for sharing with others, "prolific" for deploying
+RECRUITER = "prolific"  # "hotair" for sharing with others, "prolific" for deploying
 
 INITIAL_RECRUITMENT_SIZE = 11
-TARGET_NUM_PARTICIPANTS = 10
+TARGET_NUM_PARTICIPANTS = 100
 
 AUDIO_SET = "audio_data_original.json"  # three options: original, synth, and synth_f0
 
@@ -42,7 +42,7 @@ TRIALS_PER_PARTICIPANT = len(validation_data)
 TRIALS_PER_PARTICIPANT = 5
 TRIALS_PER_PARTICIPANT_PRACTICE = 2
 N_REPEAT_TRIALS = 0
-
+TIME_ESTIMATE_TRIAL = 25
 
 ########################################################################################################################
 # Create audio stimuli
@@ -146,7 +146,7 @@ def instructions_experiment():
 
 
 class RatingTrial(StaticTrial):
-    time_estimate = 10
+    time_estimate = TIME_ESTIMATE_TRIAL
 
     def show_trial(self, experiment, participant):
 
@@ -157,7 +157,7 @@ class RatingTrial(StaticTrial):
         current_trial = self.position + 1
 
         if self.trial_maker_id == "audio_practice":
-            audio_url = self.assets["prompt"]
+            audio_url = self.assets["prompt"]  # TODO: change this so the experiment does not use any asset!
             n_trials = TRIALS_PER_PARTICIPANT_PRACTICE
             show_current_trial = f'<i>Practice trial number {current_trial} out of {n_trials} trials.</i>'
         else:
@@ -202,22 +202,17 @@ def get_prolific_settings():
     with open("qualification_prolific.json", "r") as f:
         qualification = json.dumps(json.load(f))
     return {
-        "recruiter": RECRUITER,
+        "recruiter": "hotair",
         "prolific_reward_cents": 30,
         "prolific_estimated_completion_minutes": 2,
         "prolific_maximum_allowed_minutes": 60,
         "prolific_recruitment_config": qualification,
         "base_payment": 0.0,
-        "auto_recruit": False,
-        "currency": "£",
-        "wage_per_hour": 9
     }
 
 
 class Exp(psynet.experiment.Experiment):
-    label = "Static song preferences"
-    asset_storage = LocalStorage()
-
+    label = "melody_preferences"
     config = {
         **get_prolific_settings(),
         "initial_recruitment_size": INITIAL_RECRUITMENT_SIZE,
@@ -229,26 +224,26 @@ class Exp(psynet.experiment.Experiment):
         "organization_name": "Max Planck Institute for Empirical Aesthetics",
         "dashboard_password": "capcapcap2021!",
         "dashboard_user": "cap",
+        "show_bonus": False,
     }
-
     timeline = Timeline(
         MainConsent(),
         welcome(),
         requirements(),
         VolumeCalibration(),
-        # AntiphaseHeadphoneTest(),
+        AntiphaseHeadphoneTest(),
         instructions_practice(),
-        StaticTrialMaker(
-            id_="audio_practice",
-            trial_class=RatingTrial,
-            nodes=compile_nodes_from_directory(
-                input_dir="static/practice", media_ext=".mp3", node_class=StaticNode
-            ),
-            target_n_participants=0,
-            recruit_mode="n_participants",
-            expected_trials_per_participant=TRIALS_PER_PARTICIPANT_PRACTICE,
-            max_trials_per_participant=TRIALS_PER_PARTICIPANT_PRACTICE,
-        ),
+        # StaticTrialMaker(
+        #     id_="audio_practice",
+        #     trial_class=RatingTrial,
+        #     nodes=compile_nodes_from_directory(
+        #         input_dir="static/practice", media_ext=".mp3", node_class=StaticNode
+        #     ),
+        #     target_n_participants=0,
+        #     recruit_mode="n_participants",
+        #     expected_trials_per_participant=TRIALS_PER_PARTICIPANT_PRACTICE,
+        #     max_trials_per_participant=TRIALS_PER_PARTICIPANT_PRACTICE,
+        # ),
         instructions_experiment(),
         StaticTrialMaker(
             id_="audio_experiment",
