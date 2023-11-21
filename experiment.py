@@ -2,7 +2,6 @@ import json
 from markupsafe import Markup
 
 import psynet.experiment
-from psynet.asset import DebugStorage, LocalStorage
 from psynet.consent import NoConsent, MainConsent
 from psynet.modular_page import AudioPrompt, ModularPage, PushButtonControl
 from psynet.page import InfoPage, SuccessfulEndPage, VolumeCalibration
@@ -39,10 +38,10 @@ for item in validation_data:
     )
 
 TRIALS_PER_PARTICIPANT = len(validation_data)
-TRIALS_PER_PARTICIPANT = 5
-TRIALS_PER_PARTICIPANT_PRACTICE = 2
-N_REPEAT_TRIALS = 0
-TIME_ESTIMATE_TRIAL = 25
+# TRIALS_PER_PARTICIPANT = 5
+N_REPEAT_TRIALS = 3
+TIME_ESTIMATE_TRIAL = 20
+
 
 ########################################################################################################################
 # Create audio stimuli
@@ -108,23 +107,6 @@ def requirements():
     )
 
 
-def instructions_practice():
-    return InfoPage(
-        Markup(
-            f"""
-            <h3>Practice</h3>
-            <hr>
-            You will start by taking {TRIALS_PER_PARTICIPANT_PRACTICE} practice trials.
-            <br><br>
-            Please listen to each song carefully and rate how much you like it,
-            using a 'pleasantness' scale from 1 (very unpleasant) to 7 (very pleasant).
-            <hr>
-            """
-        ),
-        time_estimate=3
-    )
-
-
 def instructions_experiment():
     return InfoPage(
         Markup(
@@ -156,14 +138,9 @@ class RatingTrial(StaticTrial):
 
         current_trial = self.position + 1
 
-        if self.trial_maker_id == "audio_practice":
-            audio_url = self.assets["prompt"]  # TODO: change this so the experiment does not use any asset!
-            n_trials = TRIALS_PER_PARTICIPANT_PRACTICE
-            show_current_trial = f'<i>Practice trial number {current_trial} out of {n_trials} trials.</i>'
-        else:
-            n_trials = TRIALS_PER_PARTICIPANT + N_REPEAT_TRIALS
-            audio_url = self.definition['audio_url']
-            show_current_trial = f'<i>Trial number {current_trial} out of {n_trials} trials.</i>'
+        n_trials = TRIALS_PER_PARTICIPANT + N_REPEAT_TRIALS
+        audio_url = self.definition['audio_url']
+        show_current_trial = f'<i>Trial number {current_trial} out of {n_trials} trials.</i>'
 
         logger.info("audio url: {}".format(audio_url))
 
@@ -202,24 +179,27 @@ def get_prolific_settings():
     with open("qualification_prolific.json", "r") as f:
         qualification = json.dumps(json.load(f))
     return {
-        "recruiter": "hotair",
-        "prolific_reward_cents": 30,
-        "prolific_estimated_completion_minutes": 2,
+        "recruiter": "prolific",
+        "prolific_reward_cents": 300,
+        "prolific_estimated_completion_minutes": 20,
         "prolific_maximum_allowed_minutes": 60,
         "prolific_recruitment_config": qualification,
+        "auto_recruit": False,
+        "currency": "£",
         "base_payment": 0.0,
     }
 
 
 class Exp(psynet.experiment.Experiment):
     label = "melody_preferences"
+
     config = {
         **get_prolific_settings(),
         "initial_recruitment_size": INITIAL_RECRUITMENT_SIZE,
-        "title": "Listen to songs and rate them (5 min, bonus: £0.39).",
+        "title": "Listen to songs and rate them (20 min, bonus: £3).",
         "description": "Working headphones are required!"
                        "You will hear songs and be asked to rate them."
-                       "The experiment will take approximately 5 min and you will get £0.30.",
+                       "The experiment will take approximately 20 min and you will get £3.",
         "contact_email_on_error": "manuel.anglada-tort@ae.mpg.de",
         "organization_name": "Max Planck Institute for Empirical Aesthetics",
         "dashboard_password": "capcapcap2021!",
@@ -232,18 +212,6 @@ class Exp(psynet.experiment.Experiment):
         requirements(),
         VolumeCalibration(),
         AntiphaseHeadphoneTest(),
-        # instructions_practice(),
-        # StaticTrialMaker(
-        #     id_="audio_practice",
-        #     trial_class=RatingTrial,
-        #     nodes=compile_nodes_from_directory(
-        #         input_dir="static/practice", media_ext=".mp3", node_class=StaticNode
-        #     ),
-        #     target_n_participants=0,
-        #     recruit_mode="n_participants",
-        #     expected_trials_per_participant=TRIALS_PER_PARTICIPANT_PRACTICE,
-        #     max_trials_per_participant=TRIALS_PER_PARTICIPANT_PRACTICE,
-        # ),
         instructions_experiment(),
         StaticTrialMaker(
             id_="audio_experiment",
@@ -253,6 +221,7 @@ class Exp(psynet.experiment.Experiment):
             recruit_mode="n_participants",
             expected_trials_per_participant=TRIALS_PER_PARTICIPANT,
             max_trials_per_participant=TRIALS_PER_PARTICIPANT,
+            n_repeat_trials=N_REPEAT_TRIALS,
         ),
         questionnaire(),
         SuccessfulEndPage(),
