@@ -13,16 +13,16 @@ from psynet.utils import get_logger
 from psynet.prescreen import AntiphaseHeadphoneTest
 from .questionnaire import debrief, questionnaire, STOMPR, TIPI
 
-
 logger = get_logger()
+
 
 ########################################################################################################################
 # Global params
 ########################################################################################################################
 RECRUITER = "prolific"  # "hotair" for sharing with others, "prolific" for deploying
 
-INITIAL_RECRUITMENT_SIZE = 11
-TARGET_NUM_PARTICIPANTS = 100
+INITIAL_RECRUITMENT_SIZE = 5
+TARGET_NUM_PARTICIPANTS = 10
 
 AUDIO_SET = "audio_data_original.json"  # three options: original, synth, and synth_f0
 
