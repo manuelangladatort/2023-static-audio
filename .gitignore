@@ -30,3 +30,4 @@ deploy_logs/
 anonymous/
 regular/
 data/
+.Rproj.user
