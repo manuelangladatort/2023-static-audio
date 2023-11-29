@@ -2,7 +2,7 @@ import json
 from markupsafe import Markup
 
 import psynet.experiment
-from psynet.asset import LocalStorage
+from psynet.asset import S3Storage
 from psynet.consent import NoConsent, MainConsent
 from psynet.modular_page import AudioPrompt, ModularPage, PushButtonControl
 from psynet.page import InfoPage, SuccessfulEndPage, VolumeCalibration
@@ -193,7 +193,9 @@ def get_prolific_settings():
 
 class Exp(psynet.experiment.Experiment):
     label = "melody_preferences"
-    asset_storage = LocalStorage()
+    asset_storage = S3Storage(
+        "psynet-tests", "static-audio"
+    )
 
     config = {
         **get_prolific_settings(),

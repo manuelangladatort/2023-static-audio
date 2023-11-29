@@ -27,3 +27,6 @@ __pycache__
 develop/
 deploy/
 deploy_logs/
+anonymous/
+regular/
+data/
