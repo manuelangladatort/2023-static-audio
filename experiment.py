@@ -21,8 +21,8 @@ logger = get_logger()
 ########################################################################################################################
 RECRUITER = "prolific"  # "hotair" for sharing with others, "prolific" for deploying
 
-INITIAL_RECRUITMENT_SIZE = 5
-TARGET_NUM_PARTICIPANTS = 10
+INITIAL_RECRUITMENT_SIZE = 3
+TARGET_NUM_PARTICIPANTS = 100
 
 AUDIO_SET = "audio_data_original.json"  # three options: original, synth, and synth_f0
 
@@ -40,7 +40,7 @@ for item in validation_data:
 
 TRIALS_PER_PARTICIPANT = len(validation_data)
 # TRIALS_PER_PARTICIPANT = 5
-N_REPEAT_TRIALS = 3
+N_REPEAT_TRIALS = 6
 TIME_ESTIMATE_TRIAL = 20
 
 
@@ -181,13 +181,14 @@ def get_prolific_settings():
         qualification = json.dumps(json.load(f))
     return {
         "recruiter": "prolific",
+        "id": "static_audio1",
+        "initial_recruitment_size": INITIAL_RECRUITMENT_SIZE,
         "prolific_reward_cents": 300,
         "prolific_estimated_completion_minutes": 20,
-        "prolific_maximum_allowed_minutes": 60,
         "prolific_recruitment_config": qualification,
         "auto_recruit": False,
         "currency": "£",
-        "base_payment": 0.0,
+        "wage_per_hour": 0
     }
 
 
@@ -199,8 +200,7 @@ class Exp(psynet.experiment.Experiment):
 
     config = {
         **get_prolific_settings(),
-        "initial_recruitment_size": INITIAL_RECRUITMENT_SIZE,
-        "title": "Listen to songs and rate them (20 min, bonus: £3).",
+        "title": "Listen to music and rate it (20 min, bonus: £3).",
         "description": "Working headphones are required!"
                        "You will hear songs and be asked to rate them."
                        "The experiment will take approximately 20 min and you will get £3.",
@@ -209,6 +209,7 @@ class Exp(psynet.experiment.Experiment):
         "dashboard_password": "capcapcap2021!",
         "dashboard_user": "cap",
         "show_bonus": False,
+        "force_incognito_mode": True
     }
     timeline = Timeline(
         MainConsent(),

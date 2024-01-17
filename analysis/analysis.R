@@ -1,6 +1,8 @@
 library(tidyverse)
 
-ratings_data = read_csv("~/Documents/github/2023-static-audio/data/anonymous/data/RatingTrial.csv")
+# pilot (n = 10)
+# ratings_data = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/RatingTrial.csv")
+ratings_data = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/RatingTrial.csv")
 
 ratings_data_clean = ratings_data %>% 
   filter(failed == FALSE) %>%  # filter out participants who failed
@@ -18,9 +20,9 @@ ratings_data_clean = ratings_data %>%
   
 
 # N participants
-length(table(ratings_data_clean$participant_id))
+length(table(ratings_data_clean$participant_id)) # 80
 # N stimuli
-length(table(ratings_data_clean$audio_name)) 
+length(table(ratings_data_clean$audio_name)) # 40
 
 ggplot(ratings_data_clean, aes(reorder(audio_name, z_answer), z_answer, color=audio_name)) +
   geom_boxplot() +
@@ -30,5 +32,5 @@ ggplot(ratings_data_clean, aes(reorder(audio_name, z_answer), z_answer, color=au
   theme_classic() +
   theme(legend.position = "none")
 
-ggsave("song_ratings.png", height = 10, width = 20, units = "cm")
+ggsave("song_ratings_main.png", height = 10, width = 20, units = "cm")
   
