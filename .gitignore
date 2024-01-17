@@ -28,3 +28,4 @@ develop/
 deploy/
 deploy_logs/
 .Rproj.user
+data/*
