@@ -4,7 +4,7 @@ library(tidyverse)
 # ratings_data = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/RatingTrial.csv")
 ratings_data = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/RatingTrial.csv")
 
-participant_data = read_csv("~/Documents/github/2023-static-audio/data/anonymous/data/Participant.csv")
+participant_data = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/Participant.csv")
 
 ratings_data_clean = ratings_data %>% 
   filter(failed == FALSE) %>%  # filter out participants who failed
@@ -34,7 +34,7 @@ ggplot(ratings_data_clean, aes(reorder(audio_name, z_answer), z_answer, color=au
   theme_classic() +
   theme(legend.position = "none")
 
-ggsave("song_ratings_main.png", height = 10, width = 20, units = "cm")
+# ggsave("song_ratings_main.png", height = 10, width = 20, units = "cm")
   
 participant_data_clean = participant_data %>% 
   filter(failed == FALSE) %>%  # filter out participants who failed
@@ -51,4 +51,3 @@ participant_data_clean = participant_data %>%
   mutate(gmsi_score = rowMeans(cbind(gmsi_12, gmsi_2, gmsi_16, gmsi_18, gmsi_21, gmsi_22, gmsi_35))) %>%
   select(-gmsi)
 
-data_combined = merge(x = participant_data_clean, y = ratings_data_clean, by = "participant_id", all = TRUE)
