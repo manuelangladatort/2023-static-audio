@@ -1,30 +1,17 @@
 library(tidyverse)
 
-# pilot (n = 10)
-# ratings_data = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/RatingTrial.csv")
-ratings_data = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/RatingTrial.csv")
+# data_clean.csv dataframe saved in prepare-data.R
+data_clean = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/data_clean.csv")
 
-ratings_data_clean = ratings_data %>% 
-  filter(failed == FALSE) %>%  # filter out participants who failed
-  filter(is_repeat_trial == "FALSE") %>%  # filter out repeated trials
-  select(participant_id, definition, audio_name, answer) %>% 
-  # extract audio name
-  mutate(audio_name = as.factor(as.numeric(str_extract(audio_name, "\\d+")))) %>% 
-  # count number trials per participant 
-  group_by(participant_id) %>% 
-  mutate(n_ratings = n()) %>% 
-  # z-score ratings per particiapnt
-  mutate(z_answer = scale(answer)) %>% 
-  # exclude participants with less than <40 trials
-  filter(n_ratings >= 40)
-  
+# pilot (n = 10)
+# data_clean = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/data_clean.csv")
 
 # N participants
-length(table(ratings_data_clean$participant_id)) # 80
+length(table(data_clean$participant_id)) # 80
 # N stimuli
-length(table(ratings_data_clean$audio_name)) # 40
+length(table(data_clean$audio_name)) # 40
 
-ggplot(ratings_data_clean, aes(reorder(audio_name, z_answer), z_answer, color=audio_name)) +
+ggplot(data_clean, aes(reorder(audio_name, z_answer), z_answer, color=audio_name)) +
   geom_boxplot() +
   geom_jitter(shape=16, position=position_jitter(0.2)) +
   ylab("Liking rating (z- scored)") +
@@ -41,8 +28,10 @@ library(factoextra) # cluster analysis
 library(ggfortify) # plot PCAs
 library(plotly) # plot 3D PCAs
 
-data_to_clust = ratings_data_clean %>%  select(-definition, -answer) %>% 
-  pivot_wider(names_from = "audio_name", values_from = "z_answer")
+data_to_clust = data_clean %>%  select(-definition, -answer, -gender) %>% 
+    drop_na()# %>%
+ # pivot_wider(names_from = "audio_name", values_from = "z_answer") - no longer needed
+
 
 
 x = run_pca(data_to_clust, 4)
@@ -128,8 +117,12 @@ rect.hclust(hc_res, k = k, border = cluster_colors[1:k])
 
 
 # clustering + individual differences 
-data_combined_long = merge(x = data_to_clust, y = participant_data_clean, by = "participant_id", all = TRUE)
-data_combined = tibble(data_combined_long[,-3:-42]) %>% drop_na()
+#Now not needed with data_clean combined already
+#data_combined_long = merge(x = data_to_clust, y = participant_data_clean, by = "participant_id", all = TRUE)
+#data_combined = tibble(data_combined_long[,-3:-42]) %>% drop_na()
+
+#still need to remove data for plot
+data_combined = tibble(data_to_clust[,c(2, 3, 11, 52)]) %>% drop_na() #participant_id, age, gmsi_score, cluster
 
 data_combined %>% 
   group_by(cluster) %>% 
@@ -140,12 +133,12 @@ data_combined %>%
             sd_age = mean(age, na.rm = T))
 
 
-# replot long formar
-data_to_plot = tibble(data_combined_long) %>% 
-  pivot_longer(cols = `117`:`86`, names_to = "audio_name", values_to = "z_answer") %>% 
+# replot long format
+data_to_plot = tibble(data_to_clust) %>% 
+  #pivot_longer(cols = `117`:`86`, names_to = "audio_name", values_to = "z_answer") %>% - not needed
   select(-gmsi_12:-gmsi_35)  %>% 
   drop_na(z_answer) %>% 
-  mutate(audio_name = factor(audio_name), z_answer = numeric(z_answer))
+  mutate(audio_name = factor(audio_name), z_answer = z_answer)
 
 
 ggplot(data_to_plot, aes(reorder(audio_name, z_answer), z_answer, 
