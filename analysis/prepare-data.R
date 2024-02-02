@@ -8,11 +8,11 @@ participant_data = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1
 response_data = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/Response.csv")
 
 # pilot (n = 10)
-#ratings_data = read_csv("~/Documents/github/2023-static-audio/data/anonymous/data/RatingTrial.csv")
+#ratings_data = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/RatingTrial.csv")
 
-#participant_data = read_csv("~/Documents/github/2023-static-audio/data/anonymous/data/Participant.csv")
+#participant_data = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/Participant.csv")
 
-#response_data = read_csv("~/Documents/github/2023-static-audio/data/anonymous/data/Response.csv")
+#response_data = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/Response.csv")
 
 ratings_data_clean = ratings_data %>% 
   filter(failed == FALSE) %>%  # filter out participants who failed
@@ -173,6 +173,6 @@ DFS_data = response_data_clean %>%
 data_combined = merge(x = data_combined, y = DFS_data, by = "participant_id", all = TRUE)
 
 #Pilot n=10
-#write.csv(data_combined, "~/Documents/github/2023-static-audio/data/anonymous/data/data_clean.csv") 
+#write.csv(data_combined, "~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/data_clean.csv") 
 
 write.csv(data_combined, "~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/data_clean.csv") 
