@@ -171,3 +171,8 @@ DFS_data = response_data_clean %>%
   select(participant_id, Challenge_skill, Action_awareness, Clear_goals, Unambiguous_feedback, Task_concentration, Sense_of_control, Transformation_of_time, Autotelic_experience, DFS_all_score)
 
 data_combined = merge(x = data_combined, y = DFS_data, by = "participant_id", all = TRUE)
+
+#Pilot n=10
+#write.csv(data_combined, "~/Documents/github/2023-static-audio/data/anonymous/data/data_clean.csv") 
+
+write.csv(data_combined, "~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/data_clean.csv") 
