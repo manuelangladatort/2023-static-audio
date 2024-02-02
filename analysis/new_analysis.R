@@ -1,16 +1,36 @@
 library(tidyverse)
 
 # data_clean.csv dataframe saved in prepare-data.R
-data_clean = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/data_clean.csv")
+data_clean = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/data_clean.csv")
+
+ratings_data = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/RatingTrial.csv")
+
+data_clean = ratings_data %>% 
+  filter(failed == FALSE) %>%  # filter out participants who failed
+  filter(is_repeat_trial == "FALSE") %>%  # filter out repeated trials
+  select(participant_id, definition, audio_name, answer) %>% 
+  # extract audio name
+  mutate(audio_name = as.factor(as.numeric(str_extract(audio_name, "\\d+")))) %>% 
+  # count number trials per participant 
+  group_by(participant_id) %>% 
+  mutate(n_ratings = n()) %>% 
+  # z-score ratings per particiapnt
+  mutate(z_answer = scale(answer)) %>% 
+  # exclude participants with less than <40 trials
+  filter(n_ratings >= 40)
 
 # pilot (n = 10)
-# data_clean = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/data_clean.csv")
+# data_clean = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/data_clean.csv")
 
 # N participants
 length(table(data_clean$participant_id)) # 80
 # N stimuli
 length(table(data_clean$audio_name)) # 40
 
+data_clean$audio_name = factor(data_clean$audio_name)
+
+
+## EXPLORE MUSIC RATINGS
 ggplot(data_clean, aes(reorder(audio_name, z_answer), z_answer, color=audio_name)) +
   geom_boxplot() +
   geom_jitter(shape=16, position=position_jitter(0.2)) +
@@ -22,16 +42,37 @@ ggplot(data_clean, aes(reorder(audio_name, z_answer), z_answer, color=audio_name
 ggsave("song_ratings_main.png", height = 10, width = 20, units = "cm")
 
 
-# clustering
+## EXPLORE CORRELATIONS OF INDIVIDUAL DIFFERENCES
+
+
+
+## EXPLORE CORRELATIONS OF INDIVIDUAL DIFFERENCES
+
+
+################################################################################
+# what is the role of indiviudal differences on musi preferences?
+################################################################################
+## Linear models
+model1 = lm(answer ~ gmsi_score + openness + World, data = data_clean)
+summary.lm(model1)
+
+library(lme4)
+library(lmerTest)
+model1.mixed = lmer(answer ~ gmsi_score + openness + World +
+                (1 | participant_id), data = data_clean)
+summary(model1.mixed)
+
+
+## CLUSTERING
 library(ggrepel) # avoid overlapping labels in plot
 library(factoextra) # cluster analysis
 library(ggfortify) # plot PCAs
 library(plotly) # plot 3D PCAs
 
-data_to_clust = data_clean %>%  select(-definition, -answer, -gender) %>% 
-    drop_na()# %>%
- # pivot_wider(names_from = "audio_name", values_from = "z_answer") - no longer needed
 
+# we want to convert the data to wide format with rows as particaiptns and columns as songs
+data_to_clust = ratings_data_clean %>%  select(-definition, -answer) %>% 
+  pivot_wider(names_from = "audio_name", values_from = "z_answer")
 
 
 x = run_pca(data_to_clust, 4)
@@ -107,6 +148,18 @@ cluster_colors <- c("red", "blue", "green", "purple", "orange", "brown")
 rect.hclust(hc_res, k = k, border = cluster_colors[1:k])
 
 
+
+data_to_clust %>% 
+  group_by(cluster) %>% 
+  summarise(n = n())
+
+# given these groups, can we see if they differ in their individual differences?
+## calculate the mean and SD of individual differences for each group
+## bar plot of groups for each individual differences
+
+
+# old materials below
+
 # Plot dendrogram with different cut heights and highlight six clusters with distinct colors
 # png("plots/plot_dendrogram_UA_gov.confidence.png", height = 14, width = 14, units = "cm", res = 300)
 # plot(hc_res, hang = -1, cex = 0.6,
@@ -120,6 +173,7 @@ rect.hclust(hc_res, k = k, border = cluster_colors[1:k])
 #Now not needed with data_clean combined already
 #data_combined_long = merge(x = data_to_clust, y = participant_data_clean, by = "participant_id", all = TRUE)
 #data_combined = tibble(data_combined_long[,-3:-42]) %>% drop_na()
+
 
 #still need to remove data for plot
 data_combined = tibble(data_to_clust[,c(2, 3, 11, 52)]) %>% drop_na() #participant_id, age, gmsi_score, cluster

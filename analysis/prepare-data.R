@@ -173,6 +173,6 @@ DFS_data = response_data_clean %>%
 data_combined = merge(x = data_combined, y = DFS_data, by = "participant_id", all = TRUE)
 
 #Pilot n=10
-#write.csv(data_combined, "~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/data_clean.csv") 
+#write.csv(data_combined, "~/Documents/github/2023-static-audio/data/pilot_mel_pref1/data_clean.csv") 
 
-write.csv(data_combined, "~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/data_clean.csv") 
+write.csv(data_combined, "~/Documents/github/2023-static-audio/data/mel_pref1/data_clean.csv") 
