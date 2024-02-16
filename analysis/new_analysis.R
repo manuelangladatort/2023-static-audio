@@ -105,6 +105,9 @@ dev.off()
 model1 = lm(answer ~ gmsi_score + openness + World, data = data_clean)
 summary.lm(model1)
 
+model2 = lm(answer ~ gmsi_score + age + gender + gmsi_score + openness + extraversion + agreeableness + neuroticism + conscientiousness + mellow + unpretentious + sophisticated + intense + contemporary + World + Challenge_skill + Action_awareness + Clear_goals + Unambiguous_feedback + Task_concentration + Sense_of_control + Transformation_of_time + Autotelic_experience, data = data_clean)
+summary.lm(model2)
+
 library(lme4)
 library(lmerTest)
 #model1.mixed = lmer(answer ~ gmsi_score + openness + World +
