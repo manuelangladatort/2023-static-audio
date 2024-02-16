@@ -3,22 +3,6 @@ library(tidyverse)
 # data_clean.csv dataframe saved in prepare-data.R
 data_clean = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/data_clean.csv")
 
-ratings_data = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/RatingTrial.csv")
-
-data_clean = ratings_data %>% 
-  filter(failed == FALSE) %>%  # filter out participants who failed
-  filter(is_repeat_trial == "FALSE") %>%  # filter out repeated trials
-  select(participant_id, definition, audio_name, answer) %>% 
-  # extract audio name
-  mutate(audio_name = as.factor(as.numeric(str_extract(audio_name, "\\d+")))) %>% 
-  # count number trials per participant 
-  group_by(participant_id) %>% 
-  mutate(n_ratings = n()) %>% 
-  # z-score ratings per particiapnt
-  mutate(z_answer = scale(answer)) %>% 
-  # exclude participants with less than <40 trials
-  filter(n_ratings >= 40)
-
 # pilot (n = 10)
 # data_clean = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/data_clean.csv")
 
@@ -44,13 +28,78 @@ ggsave("song_ratings_main.png", height = 10, width = 20, units = "cm")
 
 ## EXPLORE CORRELATIONS OF INDIVIDUAL DIFFERENCES
 
+library(corrplot)
+library(data.table)
 
 
-## EXPLORE CORRELATIONS OF INDIVIDUAL DIFFERENCES
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+
+#converting gender to numeric variable
+data_clean$gender <- case_when(
+    data_clean$gender == "female" ~ 1,
+    data_clean$gender == "male" ~ 2,
+    data_clean$gender == "non_binary" ~ 3
+)
+
+# only one set of participant's individual differences variables per participant
+data_cor <- data_clean %>%
+  ungroup() %>%
+  arrange(participant_id)
+data_cor <- subset(data_cor, !duplicated(subset(data_cor, select=c(participant_id, gender))))
+
+#selecting for correlation variables
+data_cor <- data_cor %>%
+  select(age, gender, gmsi_score, openness, extraversion, agreeableness, neuroticism, conscientiousness, mellow, unpretentious, sophisticated, intense, contemporary, Challenge_skill, Action_awareness, Clear_goals, Unambiguous_feedback, Task_concentration, Sense_of_control, Transformation_of_time, Autotelic_experience, DFS_all_score) %>%
+  mutate_all(as.numeric) 
+  
+p1 <- corrplot(cor(data_cor, use="complete.obs"),
+         method="color",
+         type="upper",
+         p.mat = res1$p,
+         insig = "label_sig",
+         sig.level = .05,
+         #pch.cex = 0.8,
+         #pch.col = "black",
+         tl.pos = "td",
+         tl.col="black",
+         tl.cex=0.8,
+         tl.srt=50,
+         #addCoef.col = "black",
+         outline=TRUE,
+         diag = FALSE,
+         )
+
+p1
+
+####Save corrplot
+
+## PNG device
+png("individual_differences_corrplot.png")
+
+##Plot Code
+corrplot(cor(data_cor, use="complete.obs"),
+         method="color",
+         type="upper",
+         p.mat = res1$p,
+         insig = "label_sig",
+         sig.level = .05,
+         #pch.cex = 0.8,
+         #pch.col = "black",
+         tl.pos = "td",
+         tl.col="black",
+         tl.cex=0.8,
+         tl.srt=50,
+         #addCoef.col = "black",
+         outline=TRUE,
+         diag = FALSE,
+         )
+
+## Close device
+dev.off()
 
 
 ################################################################################
-# what is the role of indiviudal differences on musi preferences?
+# what is the role of indiviudal differences on music preferences?
 ################################################################################
 ## Linear models
 model1 = lm(answer ~ gmsi_score + openness + World, data = data_clean)
@@ -58,9 +107,9 @@ summary.lm(model1)
 
 library(lme4)
 library(lmerTest)
-model1.mixed = lmer(answer ~ gmsi_score + openness + World +
-                (1 | participant_id), data = data_clean)
-summary(model1.mixed)
+#model1.mixed = lmer(answer ~ gmsi_score + openness + World +
+#                (1 | participant_id), data = data_clean)
+#summary(model1.mixed)
 
 
 ## CLUSTERING
@@ -170,13 +219,9 @@ data_to_clust %>%
 
 
 # clustering + individual differences 
-#Now not needed with data_clean combined already
-#data_combined_long = merge(x = data_to_clust, y = participant_data_clean, by = "participant_id", all = TRUE)
-#data_combined = tibble(data_combined_long[,-3:-42]) %>% drop_na()
+data_combined_long = merge(x = data_to_clust, y = participant_data_clean, by = "participant_id", all = TRUE)
+data_combined = tibble(data_combined_long[,-3:-42]) %>% drop_na()
 
-
-#still need to remove data for plot
-data_combined = tibble(data_to_clust[,c(2, 3, 11, 52)]) %>% drop_na() #participant_id, age, gmsi_score, cluster
 
 data_combined %>% 
   group_by(cluster) %>% 
@@ -189,8 +234,7 @@ data_combined %>%
 
 # replot long format
 data_to_plot = tibble(data_to_clust) %>% 
-  #pivot_longer(cols = `117`:`86`, names_to = "audio_name", values_to = "z_answer") %>% - not needed
-  select(-gmsi_12:-gmsi_35)  %>% 
+  pivot_longer(cols = `117`:`86`, names_to = "audio_name", values_to = "z_answer") %>%
   drop_na(z_answer) %>% 
   mutate(audio_name = factor(audio_name), z_answer = z_answer)
 
