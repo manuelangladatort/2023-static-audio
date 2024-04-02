@@ -1,3 +1,5 @@
+# prepare data for analysis
+
 library(tidyverse)
 library(misty) #for reverse scoring items
 
@@ -8,11 +10,9 @@ participant_data = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1
 response_data = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/Response.csv")
 
 # pilot (n = 10)
-#ratings_data = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/RatingTrial.csv")
-
-#participant_data = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/Participant.csv")
-
-#response_data = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/Response.csv")
+# ratings_data = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/RatingTrial.csv")
+# participant_data = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/Participant.csv")
+# response_data = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/Response.csv")
 
 ratings_data_clean = ratings_data %>% 
   filter(failed == "FALSE") %>%  # filter out participants who failed
@@ -27,27 +27,22 @@ ratings_data_clean = ratings_data %>%
   mutate(z_answer = scale(answer)) %>% 
   # exclude participants with less than <40 trials
   filter(n_ratings >= 40)
-  
 
 # N participants
 length(table(ratings_data_clean$participant_id))
 # N stimuli
 length(table(ratings_data_clean$audio_name)) 
 
-ggplot(ratings_data_clean, aes(reorder(audio_name, z_answer), z_answer, color=audio_name)) +
-  geom_boxplot() +
-  geom_jitter(shape=16, position=position_jitter(0.2)) +
-  ylab("Liking rating (z- scored)") +
-  xlab("stimuli") +
-  theme_classic() +
-  theme(legend.position = "none")
-
-ggsave("song_ratings.png", height = 10, width = 20, units = "cm")
+write.csv(ratings_data_clean, "~/Documents/github/2023-static-audio/data/mel_pref1/ratings_data_clean.csv", row.names=FALSE) 
   
+
+# participants data
 participant_data_clean = participant_data %>% 
-  filter(failed == "False") %>%  # filter out participants who failed
-  select(id, gender, age, gmsi) %>%
+  filter(failed == FALSE) %>%  # filter out participants who failed
+  filter(progress > 0.85) %>%  # filter out participants who failed
+  select(id, gender, age, gmsi, complete) %>%
   rename(participant_id = id) %>%
+  mutate(gmsi_mt = as.numeric(str_extract(str_extract(str_extract(gmsi, '"Musical Training": [0-9]'), ': [0-9]'), '[0-9]'))) %>%
   mutate(gmsi_12 = as.numeric(str_extract(str_extract(str_extract(gmsi, '"q_12": [0-9]'), ': [0-9]'), '[0-9]'))) %>%
   mutate(gmsi_2 = as.numeric(str_extract(str_extract(str_extract(gmsi, '"q_02": [0-9]'), ': [0-9]'), '[0-9]'))) %>%
     mutate(gmsi_16 = as.numeric(str_extract(str_extract(str_extract(gmsi, '"q_16": [0-9]'), ': [0-9]'), '[0-9]'))) %>%
@@ -59,12 +54,15 @@ participant_data_clean = participant_data %>%
   mutate(gmsi_score = rowMeans(cbind(gmsi_12, gmsi_2, gmsi_16, gmsi_18, gmsi_21, gmsi_22, gmsi_35))) %>%
   select(-gmsi, -gmsi_12, -gmsi_2, -gmsi_16, -gmsi_18,-gmsi_21, -gmsi_22, -gmsi_35)
 
-data_combined = right_join(participant_data_clean, ratings_data_clean, by = "participant_id")
 
+# survey data
 response_data_clean = response_data %>% 
   filter(failed == FALSE) %>%  # filter out participants who failed
+  filter(successful_validation == TRUE) %>%  # filter out participants who failed
   select(participant_id, question, answer) 
   
+
+# personality
 tipi_data = response_data_clean %>%
   filter(str_detect(question, 'tipi')) %>%
   mutate(extraverted = as.numeric(str_extract(str_extract(str_extract(answer, '"Extraverted": "[0-9]'), ': "[0-9]'), '[0-9]'))) %>%
@@ -77,12 +75,14 @@ tipi_data = response_data_clean %>%
     mutate(disorganized = as.numeric(str_extract(str_extract(str_extract(answer, '"Disorganized": "[0-9]'), ': "[0-9]'), '[0-9]'))) %>%
     mutate(calm = as.numeric(str_extract(str_extract(str_extract(answer, '"Calm": "[0-9]'), ': "[0-9]'), '[0-9]'))) %>%
     mutate(conventional = as.numeric(str_extract(str_extract(str_extract(answer, '"Conventional": "[0-9]'), ': "[0-9]'), '[0-9]'))) %>%
-  group_by(participant_id) %>%
+  
+  
   mutate(reserved_r = item.reverse(reserved, min = 1, max = 7)) %>%
   mutate(conventional_r = item.reverse(conventional, min = 1, max = 7)) %>%
   mutate(critical_r = item.reverse(critical, min = 1, max = 7)) %>%
   mutate(calm_r = item.reverse(calm, min = 1, max = 7)) %>%
   mutate(disorganized_r = item.reverse(disorganized, min = 1, max = 7)) %>%
+  group_by(participant_id) %>%
   mutate(extraversion = mean(c(extraverted, reserved_r))) %>% 
   mutate(openness = mean(c(open, conventional_r))) %>%
   mutate(agreeableness = mean(c(sympathetic, critical_r))) %>%
@@ -90,8 +90,11 @@ tipi_data = response_data_clean %>%
   mutate(conscientiousness = mean(c(dependable, disorganized_r))) %>%
   select(participant_id, extraversion, agreeableness, neuroticism, conscientiousness, openness)
   
-data_combined =left_join(data_combined, tipi_data, by = "participant_id")
-  
+
+data_participant_combined = left_join(participant_data_clean, tipi_data, by = c("participant_id" = "participant_id")) 
+
+
+# music preferences
 stompr_data = response_data_clean %>%
   filter(str_detect(question, 'stompr')) %>%
   mutate(Alternative = as.numeric(str_extract(str_extract(str_extract(answer, '"Alternative": "[0-9]'), ': "[0-9]'), '[0-9]'))) %>%
@@ -118,15 +121,24 @@ stompr_data = response_data_clean %>%
     mutate(Soul_R_B = as.numeric(str_extract(str_extract(str_extract(answer, '"Soul/R&B": "[0-9]'), ': "[0-9]'), '[0-9]'))) %>%
     mutate(Soundtracks_theme_song = as.numeric(str_extract(str_extract(str_extract(answer, '"Soundtracks/theme song": "[0-9]'), ': "[0-9]'), '[0-9]'))) %>%
   group_by(participant_id) %>%
+  # Score 4 dimenions
+  mutate(RefCom = mean(c(Bluegrass, Blues, Classical, Folk, World, Jazz, New_Age, Opera))) %>%
+  mutate(IntReb = mean(c(Alternative, Heavy_Metal, Punk, Rock))) %>%
+  mutate(UpbConv = mean(c(Country, Gospel, Oldies, Pop, Religious, Soundtracks_theme_song))) %>%
+  mutate(EneRhy = mean(c(Dance_Electronica, Funk, Rap_hip_hop, Reggae, Soul_R_B))) %>%
+  # Score 5 dimensions
   mutate(mellow = mean(c(Dance_Electronica, World, New_Age))) %>%
   mutate(unpretentious = mean(c(Pop, Country, Religious))) %>%
   mutate(sophisticated = mean(c(Blues, Jazz, Bluegrass, Folk, Classical, Gospel, Opera))) %>%
   mutate(intense = mean(c(Rock, Punk, Alternative, Heavy_Metal))) %>%
   mutate(contemporary = mean(c(Rap_hip_hop, Soul_R_B, Funk, Reggae))) %>%
-  #select(participant_id, Alternative, Bluegrass, Blues, Classical, Country, Dance_Electronica, Folk, Funk, Gospel, Heavy_Metal, World, Jazz, New_Age, Oldies, Opera, Pop, Punk, Rap_hip_hop, Reggae, Religious, Rock, Soul_R_B, Soundtracks_theme_song)
-  select(participant_id, mellow, unpretentious, sophisticated, intense, contemporary, World)
-data_combined = left_join(data_combined, stompr_data, by = "participant_id")
+  select(participant_id, RefCom:EneRhy, World)
 
+
+data_participant_combined = left_join(data_participant_combined, stompr_data, by = "participant_id")
+
+
+# flow
 DFS_data = response_data_clean %>%
   filter(str_detect(question, 'DFS')) %>%
   mutate(Challenge_skill1 = as.numeric(str_extract(str_extract(str_extract(answer, '"Challenge_skill1": "[0-9]'), ': "[0-9]'), '[0-9]'))) %>%
@@ -175,9 +187,16 @@ DFS_data = response_data_clean %>%
   mutate(DFS_all_score = mean(c(Challenge_skill, Action_awareness, Clear_goals, Unambiguous_feedback, Task_concentration, Sense_of_control, Transformation_of_time, Autotelic_experience))) %>%  
   select(participant_id, Challenge_skill, Action_awareness, Clear_goals, Unambiguous_feedback, Task_concentration, Sense_of_control, Transformation_of_time, Autotelic_experience, DFS_all_score)
 
-data_combined = left_join(data_combined, DFS_data, by = "participant_id")
+data_participant_combined = left_join(data_participant_combined, DFS_data, by = "participant_id")
 
-#Pilot n=10
-#write.csv(data_combined, "~/Documents/github/2023-static-audio/data/pilot_mel_pref1/data_clean.csv", row.names=FALSE) 
+
+# save combined data
+
+# participants
+write.csv(data_participant_combined, "~/Documents/github/2023-static-audio/data/mel_pref1/participants_data_clean.csv", row.names=FALSE) 
+
+# participants + ratings
+data_combined = left_join(ratings_data_clean, data_participant_combined, by = "participant_id")
 
 write.csv(data_combined, "~/Documents/github/2023-static-audio/data/mel_pref1/data_clean.csv", row.names=FALSE) 
+
