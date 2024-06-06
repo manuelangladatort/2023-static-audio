@@ -1,13 +1,18 @@
 # prepare data for analysis
-
 library(tidyverse)
 library(misty) #for reverse scoring items
 
+root_path = "/Users/manu/Library/CloudStorage/OneDrive-GoldsmithsCollege/Documents/github/"
+
+# study 1: original audio
 ratings_data = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/RatingTrial.csv")
-
 participant_data = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/Participant.csv")
-
 response_data = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/anonymous/data/Response.csv")
+
+# study 2: synth f0
+ratings_data = read_csv(paste0(root_path, "2023-static-audio/data/melf0_pref1/anonymous/data/RatingTrial.csv"))
+participant_data = read_csv(paste0(root_path, "2023-static-audio/data/melf0_pref1/anonymous/data/Participant.csv")) 
+response_data = read_csv(paste0(root_path, "2023-static-audio/data/melf0_pref1/anonymous/data/Response.csv"))
 
 # pilot (n = 10)
 # ratings_data = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/anonymous/data/RatingTrial.csv")
@@ -18,22 +23,25 @@ ratings_data_clean = ratings_data %>%
   filter(failed == "FALSE") %>%  # filter out participants who failed
   filter(is_repeat_trial == "FALSE") %>%  # filter out repeated trials
   select(participant_id, definition, audio_name, answer) %>% 
-  # extract audio name
-  mutate(audio_name = as.factor(as.numeric(str_extract(audio_name, "\\d+")))) %>% 
+  # mutate(audio_name = as.factor(as.numeric(str_extract(audio_name, "\\d+")))) %>% 
   # count number trials per participant 
   group_by(participant_id) %>% 
   mutate(n_ratings = n()) %>% 
   # z-score ratings per particiapnt
   mutate(z_answer = scale(answer)) %>% 
   # exclude participants with less than <40 trials
-  filter(n_ratings >= 40)
+  filter(n_ratings >= 38) %>% 
+  select(-definition)
 
 # N participants
 length(table(ratings_data_clean$participant_id))
 # N stimuli
 length(table(ratings_data_clean$audio_name)) 
 
-write.csv(ratings_data_clean, "~/Documents/github/2023-static-audio/data/mel_pref1/ratings_data_clean.csv", row.names=FALSE) 
+write.csv(ratings_data_clean,
+          paste0(root_path,"2023-static-audio/data/melf0_pref1/ratings_data_clean.csv"), 
+          row.names=FALSE
+          )
   
 
 # participants data
@@ -193,10 +201,16 @@ data_participant_combined = left_join(data_participant_combined, DFS_data, by = 
 # save combined data
 
 # participants
-write.csv(data_participant_combined, "~/Documents/github/2023-static-audio/data/mel_pref1/participants_data_clean.csv", row.names=FALSE) 
+write.csv(data_participant_combined,
+          paste0(root_path,"2023-static-audio/data/melf0_pref1/participants_data_clean.csv"), 
+          row.names=FALSE
+)
+
 
 # participants + ratings
 data_combined = left_join(ratings_data_clean, data_participant_combined, by = "participant_id")
 
-write.csv(data_combined, "~/Documents/github/2023-static-audio/data/mel_pref1/data_clean.csv", row.names=FALSE) 
-
+write.csv(data_combined,
+          paste0(root_path,"2023-static-audio/data/melf0_pref1/data_clean.csv"), 
+          row.names=FALSE
+)

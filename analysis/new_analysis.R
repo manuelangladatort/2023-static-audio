@@ -9,18 +9,34 @@
 library(tidyverse)
 source("utils.R") # functions for analysis and visualization
 
-# data_clean.csv dataframe saved in prepare-data.R
+root_path = "/Users/manu/Library/CloudStorage/OneDrive-GoldsmithsCollege/Documents/github/"
+
+
+# study 1: original audio
 data_clean = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/data_clean.csv")
 data_pids = read_csv("~/Documents/github/2023-static-audio/data/mel_pref1/participants_data_clean.csv")
 
 # pilot (n = 10)
 # data_clean = read_csv("~/Documents/github/2023-static-audio/data/pilot_mel_pref1/data_clean.csv")
 
+# study 2: synth f0
+data_clean = read_csv(paste0(root_path, "2023-static-audio/data/melf0_pref1/data_clean.csv"))
+data_pids = read_csv(paste0(root_path, "2023-static-audio/data/melf0_pref1/participants_data_clean.csv"))
+
+
 # N participants
 length(table(data_clean$participant_id)) # 80
 # N stimuli
 length(table(data_clean$audio_name)) # 40
 
+
+data_clean = data_clean %>% 
+  separate(audio_name, c("noise", "audio_name"), sep = "-") %>% 
+  select(-noise) %>%
+  separate(audio_name, c("audio_name", "noise"), sep = "_") %>% 
+  select(-noise) %>% 
+  mutate(audio_name = as.numeric(audio_name)) 
+  
 data_clean$audio_name = factor(data_clean$audio_name)
 
 
@@ -35,7 +51,7 @@ ggplot(data_clean, aes(reorder(audio_name, z_answer), z_answer, color=audio_name
   theme_classic() +
   theme(legend.position = "none")
 
-ggsave("plots/song_ratings_main.png", height = 10, width = 20, units = "cm")
+ggsave("plots/song_ratings_mainf0.png", height = 10, width = 20, units = "cm")
 
 
 ################################################################################
