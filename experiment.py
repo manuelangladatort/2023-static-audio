@@ -24,7 +24,8 @@ RECRUITER = "prolific"  # "hotair" for sharing with others, "prolific" for deplo
 INITIAL_RECRUITMENT_SIZE = 3
 TARGET_NUM_PARTICIPANTS = 100
 
-AUDIO_SET = "audio_data_original.json"  # three options: original, synth, and synth_f0
+# AUDIO_SET = "audio_data_original.json"  # original audios
+AUDIO_SET = "audio_data_synth_f0.json"  # nori's synth_f0 versions
 
 # load json file with audio urls (from s3)
 with open(AUDIO_SET) as f:
@@ -84,7 +85,7 @@ def welcome():
             """
             <h3>Welcome!</h3>
             <hr>
-            In this experiment you will be played songs and asked to rate how much you like them.
+            In this experiment you will be played melodies and asked to rate how much you like them.
             <hr>
             """
         ),
@@ -115,9 +116,9 @@ def instructions_experiment():
             <h3>Main experiment</h3>
             <hr>
             You will now start with the main part of the experiment. 
-            You will rate a total of {(TRIALS_PER_PARTICIPANT + N_REPEAT_TRIALS)} songs.
+            You will rate a total of {(TRIALS_PER_PARTICIPANT + N_REPEAT_TRIALS)} melodies.
             <br><br>
-            <b><b>Please listen to each song carefully and rate how much you like it</b></b>,
+            <b><b>Please listen to each melody carefully and rate how much you like it</b></b>,
             using a 'pleasantness' scale from 1 (very unpleasant) to 7 (very pleasant).
             <br><br>
             Press <b><b>next</b></b> to start.
@@ -151,7 +152,7 @@ class RatingTrial(StaticTrial):
                 # audio
                 audio_url,
                 # text
-                Markup(f"""<h5>How much do you like the song?</h5> <i>{show_current_trial}</i>""")
+                Markup(f"""<h5>How much do you like the melody?</h5> <i>{show_current_trial}</i>""")
             ),
             PushButtonControl(
                 choices=[1, 2, 3, 4, 5, 6, 7],
@@ -181,34 +182,48 @@ def get_prolific_settings():
         qualification = json.dumps(json.load(f))
     return {
         "recruiter": "prolific",
-        "id": "static_audio1",
-        "initial_recruitment_size": INITIAL_RECRUITMENT_SIZE,
-        "prolific_reward_cents": 300,
-        "prolific_estimated_completion_minutes": 20,
+        "prolific_estimated_completion_minutes": 28,
+        "prolific_maximum_allowed_minutes": 48,
         "prolific_recruitment_config": qualification,
-        "auto_recruit": False,
+        "base_payment": 3,
         "currency": "£",
-        "wage_per_hour": 0
+        "wage_per_hour": 0.01
     }
 
 
 class Exp(psynet.experiment.Experiment):
     label = "melody_preferences"
+    variables = {
+        "soft_max_experiment_payment": 2000.0,
+        "hard_max_experiment_payment": 2500.0
+    }
     asset_storage = S3Storage(
         "psynet-tests", "static-audio"
     )
 
     config = {
         **get_prolific_settings(),
+        "initial_recruitment_size": INITIAL_RECRUITMENT_SIZE,
         "title": "Listen to music and rate it (20 min, bonus: £3).",
         "description": "Working headphones are required!"
-                       "You will hear songs and be asked to rate them."
+                       "You will hear melodies and be asked to rate them."
                        "The experiment will take approximately 20 min and you will get £3.",
         "contact_email_on_error": "manuel.anglada-tort@ae.mpg.de",
         "organization_name": "Max Planck Institute for Empirical Aesthetics",
-        "dashboard_password": "capcapcap2021!",
-        "dashboard_user": "cap",
-        "show_bonus": False,
+        # "dashboard_password": "capcapcap2021!",
+        # "dashboard_user": "cap",
+        # "dyno_type": "performance-l",
+        # "num_dynos_web": 3,
+        # "num_dynos_worker": 2,
+        # "redis_size": "premium-3",
+        # "host": "0.0.0.0",
+        # "clock_on": True,
+        # "heroku_python_version": "3.10.6",
+        # "database_url": "postgresql://postgres@localhost/dallinger",
+        # "database_size": "standard-2",
+        # "docker_image_base_name": "docker.io/manuelangladatort/static_audio",
+        "show_reward": False,
+        # "show_progress_bar": False
         "force_incognito_mode": True
     }
     timeline = Timeline(
@@ -218,6 +233,15 @@ class Exp(psynet.experiment.Experiment):
         VolumeCalibration(),
         AntiphaseHeadphoneTest(),
         instructions_experiment(),
+        InfoPage(
+            Markup(f"""
+                <h3>Important note</h3>
+                <hr>
+                In this experiment, we have removed all the lyrics from the songs. Please focus on rating the musicality of the melodies only.
+                <br><br>
+                Press <b><b>next</b></b> to start.
+                <hr>
+                """), time_estimate = 3),
         StaticTrialMaker(
             id_="audio_experiment",
             trial_class=RatingTrial,
